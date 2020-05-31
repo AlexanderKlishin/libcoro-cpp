@@ -1,0 +1,3 @@
+[submodule "detail/libcoro"]
+	path = detail/libcoro
+	url = https://github.com/AlexanderKlishin/libcoro.git
