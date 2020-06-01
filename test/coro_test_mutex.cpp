@@ -1,5 +1,6 @@
-#include <gtest/gtest.h>
 #include <mutex.hpp>
+
+#include "coro_test.hpp"
 
 namespace {
 
@@ -23,7 +24,7 @@ TEST_F(coro_mutex_recursive_st, basic) {
     EXPECT_MX_ST(1);
     coro();
     EXPECT_MX_ST(0);
-    ASSERT_FALSE(coro);
+    ASSERT_CORO_DEAD(coro);
 }
 
 TEST_F(coro_mutex_recursive_st, reenter) {
@@ -49,7 +50,7 @@ TEST_F(coro_mutex_recursive_st, reenter) {
     EXPECT_MX_ST(3);
     coro();
     EXPECT_MX_ST(0);
-    ASSERT_FALSE(coro);
+    ASSERT_CORO_DEAD(coro);
 }
 
 TEST_F(coro_mutex_recursive_st, two_coros_lock) {

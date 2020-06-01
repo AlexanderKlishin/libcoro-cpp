@@ -1,13 +1,14 @@
-#include <gtest/gtest.h>
 #include <coro_await.hpp>
+
+#include "coro_test.hpp"
 
 TEST(coro_test, single_coro_resume) {
     int res = 0;
     coroutine_t coro([&res]() { res += 1; });
     ASSERT_EQ(0, res);
-    ASSERT_TRUE(!!coro);
+    ASSERT_CORO_RUNNING(coro);
     coro();
-    ASSERT_FALSE(coro);
+    ASSERT_CORO_DEAD(coro);
     ASSERT_EQ(1, res);
 }
 
@@ -20,7 +21,7 @@ TEST(coro_test, single_coro_resume_yield) {
     });
     ASSERT_EQ(0, res);
 
-    ASSERT_TRUE(!!coro);
+    ASSERT_CORO_RUNNING(coro);
 
     coro();
     ASSERT_EQ(1, res);
@@ -28,7 +29,7 @@ TEST(coro_test, single_coro_resume_yield) {
     coro();
     ASSERT_EQ(2, res);
 
-    ASSERT_FALSE(coro);
+    ASSERT_CORO_DEAD(coro);
 }
 
 TEST(coro_test, single_coro_resume_yield_cycle) {
@@ -42,14 +43,14 @@ TEST(coro_test, single_coro_resume_yield_cycle) {
     });
 
     for(int i = 1; i <= size; ++i) {
-        ASSERT_TRUE(!!coro);
+        ASSERT_CORO_RUNNING(coro);
         coro();
         ASSERT_EQ(i, res);
     }
 
-    ASSERT_TRUE(!!coro);
+    ASSERT_CORO_RUNNING(coro);
     coro();
-    ASSERT_FALSE(coro);
+    ASSERT_CORO_DEAD(coro);
 }
 
 TEST(coro_test, two_coro_resume) {
@@ -59,15 +60,15 @@ TEST(coro_test, two_coro_resume) {
     coroutine_t coro1([&res]() { res += 1; });
     ASSERT_EQ(0, res);
 
-    ASSERT_TRUE(!!coro0);
-    ASSERT_TRUE(!!coro1);
+    ASSERT_CORO_RUNNING(coro0);
+    ASSERT_CORO_RUNNING(coro1);
 
     coro0();
-    ASSERT_FALSE(coro0);
+    ASSERT_CORO_DEAD(coro0);
     ASSERT_EQ(1, res);
 
     coro1();
-    ASSERT_FALSE(coro1);
+    ASSERT_CORO_DEAD(coro1);
     ASSERT_EQ(2, res);
 }
 
@@ -94,22 +95,22 @@ TEST(coro_test, two_coro_resume_yield) {
     coro1();
     ASSERT_EQ(4, res);
 
-    ASSERT_FALSE(coro0);
-    ASSERT_FALSE(coro1);
+    ASSERT_CORO_DEAD(coro0);
+    ASSERT_CORO_DEAD(coro1);
 }
 
 TEST(coro_test, move_ctor) {
     coroutine_t coro0([]() { coro_yield(); });
 
-    ASSERT_TRUE(!!coro0);
+    ASSERT_CORO_RUNNING(coro0);
     coroutine_t coro1(std::move(coro0));
-    ASSERT_FALSE(coro0);
+    ASSERT_CORO_DEAD(coro0);
 
-    ASSERT_TRUE(!!coro1);
+    ASSERT_CORO_RUNNING(coro1);
     coro1();
-    ASSERT_TRUE(!!coro1);
+    ASSERT_CORO_RUNNING(coro1);
     coro1();
-    ASSERT_FALSE(coro1);
+    ASSERT_CORO_DEAD(coro1);
 }
 
 TEST(coro_test, exceptions) {
@@ -136,13 +137,13 @@ TEST(coro_test, move_operator) {
 
     coro1 = std::move(coro0);
 
-    ASSERT_FALSE(coro0);
+    ASSERT_CORO_DEAD(coro0);
 
-    ASSERT_TRUE(!!coro1);
+    ASSERT_CORO_RUNNING(coro1);
     coro1();
-    ASSERT_TRUE(!!coro1);
+    ASSERT_CORO_RUNNING(coro1);
     coro1();
-    ASSERT_FALSE(coro1);
+    ASSERT_CORO_DEAD(coro1);
 }
 
 TEST(coro_test, many_coro_resume_yield) {
@@ -160,12 +161,12 @@ TEST(coro_test, many_coro_resume_yield) {
     }
 
     for(auto& coro : coros)
-        ASSERT_TRUE(!!coro);
+        ASSERT_CORO_RUNNING(coro);
 
     int cur = 1;
     // run all coros until yield
     for(auto& coro : coros) {
-        ASSERT_TRUE(!!coro);
+        ASSERT_CORO_RUNNING(coro);
         coro();
         ASSERT_EQ(cur, res);
         cur += 1;
@@ -173,9 +174,9 @@ TEST(coro_test, many_coro_resume_yield) {
 
     // finish all coros
     for(auto& coro : coros) {
-        ASSERT_TRUE(!!coro);
+        ASSERT_CORO_RUNNING(coro);
         coro();
-        ASSERT_FALSE(coro);
+        ASSERT_CORO_DEAD(coro);
         ASSERT_EQ(cur, res);
         cur += 1;
     }
@@ -273,11 +274,11 @@ TEST(coro_test, current_cross_calls) {
 
     CHECK_CUR(nullptr, 0);
     coro();
-    ASSERT_TRUE(!!coro);
+    ASSERT_CORO_RUNNING(coro);
     CHECK_CUR(nullptr, 0);
 
     coro_other();
-    ASSERT_TRUE(!!coro_other);
+    ASSERT_CORO_RUNNING(coro_other);
     CHECK_CUR(nullptr, 0);
 
     coro();
@@ -294,10 +295,10 @@ TEST(coro_test, nested_cross_call) {
     });
 
     coro();
-    ASSERT_TRUE(!!coro);
+    ASSERT_CORO_RUNNING(coro);
 
     coro_other();
-    ASSERT_TRUE(!!coro_other);
+    ASSERT_CORO_RUNNING(coro_other);
 
     coro();
     EXPECT_FALSE(coro);
@@ -326,18 +327,18 @@ TEST(coro_test, when_all_algo_test) {
         });
 
     coro_main();
-    ASSERT_TRUE(!!coro_main);
+    ASSERT_CORO_RUNNING(coro_main);
     EXPECT_STREQ("012", res.data());
 
     coro1();
-    ASSERT_FALSE(coro1);
+    ASSERT_CORO_DEAD(coro1);
     EXPECT_STREQ("0121", res.data());
 
     coro2();
-    ASSERT_FALSE(coro2);
+    ASSERT_CORO_DEAD(coro2);
     EXPECT_STREQ("01212", res.data());
 
     coro_main();
-    ASSERT_FALSE(coro_main);
+    ASSERT_CORO_DEAD(coro_main);
     EXPECT_STREQ("012120", res.data());
 }

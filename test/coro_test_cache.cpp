@@ -1,5 +1,6 @@
-#include <gtest/gtest.h>
 #include <coroutine_cache.hpp>
+
+#include "coro_test.hpp"
 
 TEST(coroutine_cache, simple) {
     coroutine_cache_t cache;

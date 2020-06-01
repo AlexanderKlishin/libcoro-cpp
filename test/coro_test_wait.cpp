@@ -1,5 +1,6 @@
 #include <coro_await.hpp>
-#include <gtest/gtest.h>
+
+#include "coro_test.hpp"
 
 struct Request {
     coroutine_t::control_t* coro;
@@ -37,17 +38,17 @@ TEST(coro_test_await, await_request) {
 
     coro();
     ASSERT_EQ(0, res);
-    ASSERT_TRUE(!!coro);
+    ASSERT_CORO_RUNNING(coro);
 
     coro();
     ASSERT_EQ(1, res);
-    ASSERT_TRUE(!!coro);
+    ASSERT_CORO_RUNNING(coro);
 
     coro();
     ASSERT_EQ(2, res);
-    ASSERT_TRUE(!!coro);
+    ASSERT_CORO_RUNNING(coro);
 
     coro();
     ASSERT_EQ(3, res);
-    ASSERT_FALSE(coro);
+    ASSERT_CORO_DEAD(coro);
 }

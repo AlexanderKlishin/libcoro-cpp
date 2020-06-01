@@ -26,6 +26,7 @@ enable_testing()
 find_package(GTest REQUIRED)
 
 add_executable(coro_test
+    test/coro_test.hpp
     test/coro_test.cpp
     test/coro_test_base.cpp
     test/coro_test_cache.cpp
